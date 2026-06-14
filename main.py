@@ -12,7 +12,6 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # =========================
 
 TICKET_CHANNEL_ID = 1498477718499492069
-CATEGORY_ID = 1498477718499492064
 STAFF_ROLE_ID = 1498522857356132465
 OWNER_ID = 1496941098009100519
 
@@ -27,13 +26,13 @@ class TicketSelect(discord.ui.Select):
 
     def __init__(self):
         options = [
-            discord.SelectOption(label="Denúncia", emoji="🤠"),
-            discord.SelectOption(label="Dúvidas", emoji="😃"),
-            discord.SelectOption(label="Parceria", emoji="😄"),
+            discord.SelectOption(label="Denúncias", emoji="⚒️"),
+            discord.SelectOption(label="Dúvidas", emoji="❓"),
+            discord.SelectOption(label="Parceria", emoji="⭐"),
         ]
 
         super().__init__(
-            placeholder="Escolha o tipo de ticket...",
+            placeholder="Escolha o motivo do ticket...",
             min_values=1,
             max_values=1,
             options=options
@@ -43,7 +42,7 @@ class TicketSelect(discord.ui.Select):
 
         if interaction.channel.id != TICKET_CHANNEL_ID:
             return await interaction.response.send_message(
-                "Use o painel oficial de tickets no canal correto.",
+                "Use o canal oficial de tickets.",
                 ephemeral=True
             )
 
@@ -54,6 +53,10 @@ class TicketSelect(discord.ui.Select):
         staff_role = guild.get_role(STAFF_ROLE_ID)
         owner = await bot.fetch_user(OWNER_ID)
 
+        # =========================
+        # CRIA THREAD
+        # =========================
+
         thread = await interaction.channel.create_thread(
             name=f"{tipo} ✦ {user.name} ✦ {user.id}",
             type=discord.ChannelType.private_thread
@@ -63,48 +66,50 @@ class TicketSelect(discord.ui.Select):
 
         await thread.add_user(user)
 
-        # STAFF / OWNER
-        if tipo in ["Denúncia", "Dúvidas"]:
+        # =========================
+        # PERMISSÕES
+        # =========================
+
+        if tipo in ["Denúncias", "Dúvidas"]:
             await thread.send(f"{staff_role.mention}")
 
         elif tipo == "Parceria":
             await thread.add_user(owner)
             await thread.send(f"{owner.mention}")
 
-        # MENSAGENS
-        embed = discord.Embed(
-            title=f"🎫 Ticket de {tipo}",
-            color=discord.Color.blurple()
-        )
+        # =========================
+        # MENSAGENS DO TICKET
+        # =========================
 
-        if tipo == "Denúncia":
-            embed.description = (
-                "🤠 | Staff irá atender em breve.\n\n"
-                "Tenha respeito e cordialidade.\n\n"
-                "**Itens:**\n"
-                "- Prints\n"
-                "- ID ou nome do infrator"
+        if tipo == "Denúncias":
+            msg = (
+                "🤠 | Alguém da equipe staff logo virá atender.\n"
+                "Por favor, tenha cordialidade e respeito pelos nossos staffs.\n\n"
+                "Tenha os seguintes itens em mãos:\n"
+                "- Prints do ocorrido\n"
+                "- Nome do infrator (ou ID)"
             )
 
         elif tipo == "Dúvidas":
-            embed.description = (
-                "😃 | Staff irá te atender em breve.\n"
+            msg = (
+                "😃 | Alguém da equipe staff virá atender.\n"
+                "Tenha cordialidade e respeito.\n"
                 "Explique sua dúvida com clareza."
             )
 
         else:
-            embed.description = (
-                "😄 | Dono irá analisar sua parceria.\n\n"
-                "**Requisitos:**\n"
-                "- 700+ membros\n"
+            msg = (
+                "😄 | O dono do servidor logo virá.\n\n"
+                "Tenha paciência e lembre-se:\n"
+                "- mínimo 700 membros\n"
                 "- público ativo\n"
-                "- sem NSFW"
+                "- sem NSFW ou +18"
             )
 
-        await thread.send(embed=embed, view=TicketControls())
+        await thread.send(msg, view=TicketControls())
 
         await interaction.response.send_message(
-            f"🎫 Ticket criado: {thread.mention}",
+            f"Ticket criado: {thread.mention}",
             ephemeral=True
         )
 
@@ -120,7 +125,7 @@ class TicketPanel(discord.ui.View):
 
 
 # =========================
-# CONTROLES
+# CONTROLES DO TICKET
 # =========================
 
 class TicketControls(discord.ui.View):
@@ -158,7 +163,7 @@ class TicketControls(discord.ui.View):
             user = await bot.fetch_user(user_id)
 
             await user.send(
-                f"Seu ticket `{thread.name}` foi fechado.\nDeseja reabrir?",
+                f"Seu ticket foi fechado: {thread.name}",
                 view=ReopenView(thread.id)
             )
         except:
@@ -166,7 +171,7 @@ class TicketControls(discord.ui.View):
 
         await thread.edit(archived=True, locked=True)
 
-        await interaction.response.send_message("Ticket fechado!", ephemeral=True)
+        await interaction.response.send_message("Fechado!", ephemeral=True)
 
 
 # =========================
@@ -204,14 +209,14 @@ async def ticket(ctx):
 
     embed = discord.Embed(
         title="# MOON SOCIETY #",
-        description=(
-            "Bem-vindo à central de tickets.\n\n"
-            "Use apenas para:\n"
-            "- Denúncia\n"
-            "- Dúvidas\n"
-            "- Parceria\n\n"
-            "Escolha abaixo o tipo de atendimento."
-        ),
+        description=
+        "Seja bem-vindo(a) a central de tickets.\n\n"
+        "Use pra fazer denúncias e fazer perguntas sobre o servidor.\n"
+        "Por favor, não crie tickets caso não for um dos motivos abaixo:\n"
+        "- Fazer denúncias ;\n"
+        "- Tirar dúvidas;\n"
+        "- Fazer parceria.\n\n"
+        "Caso não for nenhum desses motivos, **NÃO** abra o ticket, pois, você será sujeito a uma punição.",
         color=discord.Color.blurple()
     )
 
