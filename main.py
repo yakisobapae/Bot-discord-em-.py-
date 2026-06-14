@@ -4,6 +4,7 @@ import os
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -12,101 +13,128 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # =========================
 
 TICKET_CHANNEL_ID = 1498477718499492069
+LOG_CHANNEL_ID = 1498477718499492069  # pode trocar depois
 STAFF_ROLE_ID = 1498522857356132465
 OWNER_ID = 1496941098009100519
 
-ticket_creator = {}
+tickets = {}
 
 
 # =========================
-# SELECT MENU
+# COMPONENTS V2 PAINEL
 # =========================
 
-class TicketSelect(discord.ui.Select):
+def panel_v2():
+    return {
+        "type": 17,
+        "accent_color": 0x2b2d31,
+        "components": [
 
-    def __init__(self):
-        options = [
-            discord.SelectOption(label="Denúncias", emoji="⚒️"),
-            discord.SelectOption(label="Dúvidas", emoji="❓"),
-            discord.SelectOption(label="Parceria", emoji="⭐"),
+            {
+                "type": 10,
+                "content": """# MOON SOCIETY #
+Seja bem-vindo(a) a central de tickets.
+
+Use pra:
+- Denúncias
+- Dúvidas
+- Parcerias
+
+Não abra tickets sem motivo válido."""
+            },
+
+            {
+                "type": 1,
+                "components": [
+                    {
+                        "type": 3,
+                        "custom_id": "ticket_select",
+                        "placeholder": "Escolha o tipo de ticket...",
+                        "options": [
+                            {"label": "Denúncias", "value": "Denúncias", "emoji": {"name": "⚒️"}},
+                            {"label": "Dúvidas", "value": "Dúvidas", "emoji": {"name": "❓"}},
+                            {"label": "Parceria", "value": "Parceria", "emoji": {"name": "⭐"}}
+                        ]
+                    }
+                ]
+            }
         ]
+    }
 
-        super().__init__(
-            placeholder="Escolha o motivo do ticket...",
-            min_values=1,
-            max_values=1,
-            options=options
-        )
 
-    async def callback(self, interaction: discord.Interaction):
+# =========================
+# BOTÕES V2 (TICKET)
+# =========================
 
-        if interaction.channel.id != TICKET_CHANNEL_ID:
-            return await interaction.response.send_message(
-                "Use o canal oficial de tickets.",
-                ephemeral=True
-            )
+def ticket_controls():
+    return [
+        {
+            "type": 1,
+            "components": [
+                {
+                    "type": 2,
+                    "style": 2,
+                    "label": "Assumir",
+                    "custom_id": "claim_ticket"
+                },
+                {
+                    "type": 2,
+                    "style": 4,
+                    "label": "Fechar",
+                    "custom_id": "close_ticket"
+                }
+            ]
+        }
+    ]
 
-        tipo = self.values[0]
+
+# =========================
+# INTERAÇÕES
+# =========================
+
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+
+    if interaction.type != discord.InteractionType.component:
+        return
+
+    data = interaction.data
+    cid = data.get("custom_id")
+
+
+    # =========================
+    # SELECT
+    # =========================
+
+    if cid == "ticket_select":
+
+        tipo = data["values"][0]
         user = interaction.user
+
         guild = interaction.guild
 
-        staff_role = guild.get_role(STAFF_ROLE_ID)
+        staff = guild.get_role(STAFF_ROLE_ID)
         owner = await bot.fetch_user(OWNER_ID)
-
-        # =========================
-        # CRIA THREAD
-        # =========================
 
         thread = await interaction.channel.create_thread(
             name=f"{tipo} ✦ {user.name} ✦ {user.id}",
             type=discord.ChannelType.private_thread
         )
 
-        ticket_creator[thread.id] = user.id
+        tickets[thread.id] = user.id
 
         await thread.add_user(user)
 
-        # =========================
-        # PERMISSÕES
-        # =========================
-
         if tipo in ["Denúncias", "Dúvidas"]:
-            await thread.send(f"{staff_role.mention}")
-
-        elif tipo == "Parceria":
+            await thread.send(f"{staff.mention}")
+        else:
             await thread.add_user(owner)
             await thread.send(f"{owner.mention}")
 
-        # =========================
-        # MENSAGENS DO TICKET
-        # =========================
-
-        if tipo == "Denúncias":
-            msg = (
-                "🤠 | Alguém da equipe staff logo virá atender.\n"
-                "Por favor, tenha cordialidade e respeito pelos nossos staffs.\n\n"
-                "Tenha os seguintes itens em mãos:\n"
-                "- Prints do ocorrido\n"
-                "- Nome do infrator (ou ID)"
-            )
-
-        elif tipo == "Dúvidas":
-            msg = (
-                "😃 | Alguém da equipe staff virá atender.\n"
-                "Tenha cordialidade e respeito.\n"
-                "Explique sua dúvida com clareza."
-            )
-
-        else:
-            msg = (
-                "😄 | O dono do servidor logo virá.\n\n"
-                "Tenha paciência e lembre-se:\n"
-                "- mínimo 700 membros\n"
-                "- público ativo\n"
-                "- sem NSFW ou +18"
-            )
-
-        await thread.send(msg, view=TicketControls())
+        await thread.send(
+            f"🎫 Ticket de {tipo} criado.",
+            components=ticket_controls()
+        )
 
         await interaction.response.send_message(
             f"Ticket criado: {thread.mention}",
@@ -114,48 +142,27 @@ class TicketSelect(discord.ui.Select):
         )
 
 
-# =========================
-# PAINEL
-# =========================
+    # =========================
+    # ASSUMIR TICKET
+    # =========================
 
-class TicketPanel(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(TicketSelect())
-
-
-# =========================
-# CONTROLES DO TICKET
-# =========================
-
-class TicketControls(discord.ui.View):
-
-    def __init__(self):
-        super().__init__(timeout=None)
-
-
-    @discord.ui.button(label="Assumir", style=discord.ButtonStyle.gray)
-    async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
+    elif cid == "claim_ticket":
 
         await interaction.channel.send(
-            f"🎯 Ticket assumido por {interaction.user.mention}"
+            f"``🎯 Ticket assumido por {interaction.user.mention}``"
         )
 
-        try:
-            await interaction.user.send(
-                f"Você assumiu o ticket: {interaction.channel.name}"
-            )
-        except:
-            pass
-
-        await interaction.response.send_message("Ticket assumido!", ephemeral=True)
+        await interaction.response.send_message("Assumido!", ephemeral=True)
 
 
-    @discord.ui.button(label="Fechar", style=discord.ButtonStyle.red)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+    # =========================
+    # FECHAR TICKET
+    # =========================
+
+    elif cid == "close_ticket":
 
         thread = interaction.channel
-        user_id = ticket_creator.get(thread.id)
+        user_id = tickets.get(thread.id)
 
         await thread.send("🔒 Ticket fechado.")
 
@@ -164,7 +171,19 @@ class TicketControls(discord.ui.View):
 
             await user.send(
                 f"Seu ticket foi fechado: {thread.name}",
-                view=ReopenView(thread.id)
+                components=[
+                    {
+                        "type": 1,
+                        "components": [
+                            {
+                                "type": 2,
+                                "style": 3,
+                                "label": "Reabrir Ticket",
+                                "custom_id": f"reopen_{thread.id}"
+                            }
+                        ]
+                    }
+                ]
             )
         except:
             pass
@@ -174,30 +193,21 @@ class TicketControls(discord.ui.View):
         await interaction.response.send_message("Fechado!", ephemeral=True)
 
 
-# =========================
-# REABRIR TICKET
-# =========================
+    # =========================
+    # REABRIR TICKET
+    # =========================
 
-class ReopenView(discord.ui.View):
+    elif cid.startswith("reopen_"):
 
-    def __init__(self, thread_id):
-        super().__init__(timeout=None)
-        self.thread_id = thread_id
+        thread_id = int(cid.split("_")[1])
 
-
-    @discord.ui.button(label="Reabrir Ticket", style=discord.ButtonStyle.green)
-    async def reopen(self, interaction: discord.Interaction, button: discord.ui.Button):
-
-        thread = await bot.fetch_channel(self.thread_id)
+        thread = await bot.fetch_channel(thread_id)
 
         await thread.edit(archived=False, locked=False)
 
         await thread.send(f"🔓 Ticket reaberto por {interaction.user.mention}")
 
-        await interaction.response.send_message(
-            "Ticket reaberto com sucesso!",
-            ephemeral=True
-        )
+        await interaction.response.send_message("Reaberto!", ephemeral=True)
 
 
 # =========================
@@ -207,24 +217,13 @@ class ReopenView(discord.ui.View):
 @bot.command()
 async def ticket(ctx):
 
-    embed = discord.Embed(
-        title="# MOON SOCIETY #",
-        description=
-        "Seja bem-vindo(a) a central de tickets.\n\n"
-        "Use pra fazer denúncias e fazer perguntas sobre o servidor.\n"
-        "Por favor, não crie tickets caso não for um dos motivos abaixo:\n"
-        "- Fazer denúncias ;\n"
-        "- Tirar dúvidas;\n"
-        "- Fazer parceria.\n\n"
-        "Caso não for nenhum desses motivos, **NÃO** abra o ticket, pois, você será sujeito a uma punição.",
-        color=discord.Color.blurple()
+    await ctx.send(
+        components=[panel_v2()]
     )
-
-    await ctx.send(embed=embed, view=TicketPanel())
 
 
 # =========================
-# BOT ONLINE
+# START
 # =========================
 
 @bot.event
