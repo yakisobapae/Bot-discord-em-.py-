@@ -4,7 +4,6 @@ import os
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -13,15 +12,15 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # =========================
 
 TICKET_CHANNEL_ID = 1498477718499492069
-LOG_CHANNEL_ID = 1498477718499492069  # pode trocar depois
 STAFF_ROLE_ID = 1498522857356132465
 OWNER_ID = 1496941098009100519
 
-tickets = {}
+ticket_creator = {}
+panel_sent = False
 
 
 # =========================
-# COMPONENTS V2 PAINEL
+# PAINEL V2 (SEM EMBED)
 # =========================
 
 def panel_v2():
@@ -33,14 +32,15 @@ def panel_v2():
             {
                 "type": 10,
                 "content": """# MOON SOCIETY #
-Seja bem-vindo(a) a central de tickets.
+Seja bem-vindo(a) à central de tickets.
 
-Use pra:
+Use apenas para:
 - Denúncias
 - Dúvidas
-- Parcerias
+- Parceria
 
-Não abra tickets sem motivo válido."""
+Não crie tickets sem motivo válido.
+"""
             },
 
             {
@@ -51,9 +51,9 @@ Não abra tickets sem motivo válido."""
                         "custom_id": "ticket_select",
                         "placeholder": "Escolha o tipo de ticket...",
                         "options": [
-                            {"label": "Denúncias", "value": "Denúncias", "emoji": {"name": "⚒️"}},
-                            {"label": "Dúvidas", "value": "Dúvidas", "emoji": {"name": "❓"}},
-                            {"label": "Parceria", "value": "Parceria", "emoji": {"name": "⭐"}}
+                            {"label": "Denúncias", "value": "Denúncias", "emoji": {"name": "🤠"}},
+                            {"label": "Dúvidas", "value": "Dúvidas", "emoji": {"name": "😃"}},
+                            {"label": "Parceria", "value": "Parceria", "emoji": {"name": "😄"}}
                         ]
                     }
                 ]
@@ -63,10 +63,109 @@ Não abra tickets sem motivo válido."""
 
 
 # =========================
-# BOTÕES V2 (TICKET)
+# INTERAÇÕES V2
+# =========================
+
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+
+    if interaction.type != discord.InteractionType.component:
+        return
+
+    data = interaction.data
+    cid = data.get("custom_id")
+
+    # =========================
+    # SELECT TICKET
+    # =========================
+
+    if cid == "ticket_select":
+
+        tipo = data["values"][0]
+        user = interaction.user
+        guild = interaction.guild
+
+        staff = guild.get_role(STAFF_ROLE_ID)
+        owner = await bot.fetch_user(OWNER_ID)
+
+        thread = await interaction.channel.create_thread(
+            name=f"{tipo} ✦ {user.name} ✦ {user.id}",
+            type=discord.ChannelType.private_thread
+        )
+
+        ticket_creator[thread.id] = user.id
+
+        await thread.add_user(user)
+
+        if tipo in ["Denúncias", "Dúvidas"]:
+            await thread.send(f"{staff.mention}")
+        else:
+            await thread.add_user(owner)
+            await thread.send(f"{owner.mention}")
+
+        if tipo == "Denúncias":
+            msg = "⚒️ Staff irá atender. Tenha prints e ID."
+        elif tipo == "Dúvidas":
+            msg = "❓ Staff irá te ajudar em breve."
+        else:
+            msg = "⭐ Dono irá analisar parceria."
+
+        await thread.send(msg, components=ticket_controls())
+
+        await interaction.response.send_message(
+            f"Ticket criado: {thread.mention}",
+            ephemeral=True
+        )
+
+    # =========================
+    # BOTÕES
+    # =========================
+
+    elif cid == "claim_ticket":
+
+        await interaction.channel.send(
+            f"🎯 Ticket assumido por {interaction.user.mention}"
+        )
+
+        await interaction.response.send_message("Assumido!", ephemeral=True)
+
+
+    elif cid == "close_ticket":
+
+        thread = interaction.channel
+        user_id = ticket_creator.get(thread.id)
+
+        await thread.send("🔒 Ticket fechado.")
+        await thread.edit(archived=True, locked=True)
+
+        try:
+            user = await bot.fetch_user(user_id)
+            await user.send("Seu ticket foi fechado. Deseja reabrir?")
+        except:
+            pass
+
+        await interaction.response.send_message("Fechado!", ephemeral=True)
+
+
+    elif cid.startswith("reopen_"):
+
+        thread_id = int(cid.split("_")[1])
+
+        thread = await bot.fetch_channel(thread_id)
+
+        await thread.edit(archived=False, locked=False)
+
+        await thread.send(f"🔓 Ticket reaberto por {interaction.user.mention}")
+
+        await interaction.response.send_message("Reaberto!", ephemeral=True)
+
+
+# =========================
+# BOTÕES V2
 # =========================
 
 def ticket_controls():
+
     return [
         {
             "type": 1,
@@ -89,146 +188,33 @@ def ticket_controls():
 
 
 # =========================
-# INTERAÇÕES
+# AUTO PAINEL
 # =========================
 
 @bot.event
-async def on_interaction(interaction: discord.Interaction):
+async def on_ready():
+    global panel_sent
 
-    if interaction.type != discord.InteractionType.component:
+    print(f"Logado como {bot.user}")
+
+    if panel_sent:
         return
 
-    data = interaction.data
-    cid = data.get("custom_id")
+    channel = bot.get_channel(TICKET_CHANNEL_ID)
 
-
-    # =========================
-    # SELECT
-    # =========================
-
-    if cid == "ticket_select":
-
-        tipo = data["values"][0]
-        user = interaction.user
-
-        guild = interaction.guild
-
-        staff = guild.get_role(STAFF_ROLE_ID)
-        owner = await bot.fetch_user(OWNER_ID)
-
-        thread = await interaction.channel.create_thread(
-            name=f"{tipo} ✦ {user.name} ✦ {user.id}",
-            type=discord.ChannelType.private_thread
+    if channel:
+        await channel.send(
+            content=None,
+            embeds=None,
+            components=[panel_v2()],
+            flags=32768
         )
 
-        tickets[thread.id] = user.id
-
-        await thread.add_user(user)
-
-        if tipo in ["Denúncias", "Dúvidas"]:
-            await thread.send(f"{staff.mention}")
-        else:
-            await thread.add_user(owner)
-            await thread.send(f"{owner.mention}")
-
-        await thread.send(
-            f"🎫 Ticket de {tipo} criado.",
-            components=ticket_controls()
-        )
-
-        await interaction.response.send_message(
-            f"Ticket criado: {thread.mention}",
-            ephemeral=True
-        )
-
-
-    # =========================
-    # ASSUMIR TICKET
-    # =========================
-
-    elif cid == "claim_ticket":
-
-        await interaction.channel.send(
-            f"``🎯 Ticket assumido por {interaction.user.mention}``"
-        )
-
-        await interaction.response.send_message("Assumido!", ephemeral=True)
-
-
-    # =========================
-    # FECHAR TICKET
-    # =========================
-
-    elif cid == "close_ticket":
-
-        thread = interaction.channel
-        user_id = tickets.get(thread.id)
-
-        await thread.send("🔒 Ticket fechado.")
-
-        try:
-            user = await bot.fetch_user(user_id)
-
-            await user.send(
-                f"Seu ticket foi fechado: {thread.name}",
-                components=[
-                    {
-                        "type": 1,
-                        "components": [
-                            {
-                                "type": 2,
-                                "style": 3,
-                                "label": "Reabrir Ticket",
-                                "custom_id": f"reopen_{thread.id}"
-                            }
-                        ]
-                    }
-                ]
-            )
-        except:
-            pass
-
-        await thread.edit(archived=True, locked=True)
-
-        await interaction.response.send_message("Fechado!", ephemeral=True)
-
-
-    # =========================
-    # REABRIR TICKET
-    # =========================
-
-    elif cid.startswith("reopen_"):
-
-        thread_id = int(cid.split("_")[1])
-
-        thread = await bot.fetch_channel(thread_id)
-
-        await thread.edit(archived=False, locked=False)
-
-        await thread.send(f"🔓 Ticket reaberto por {interaction.user.mention}")
-
-        await interaction.response.send_message("Reaberto!", ephemeral=True)
-
-
-# =========================
-# COMANDO PAINEL
-# =========================
-
-@bot.command()
-async def ticket(ctx):
-
-    await ctx.send(
-        components=[panel_v2()]
-    )
+    panel_sent = True
 
 
 # =========================
 # START
 # =========================
-
-@bot.event
-async def on_ready():
-    print(f"Logado como {bot.user}")
-
 
 bot.run(os.getenv("DISCORD_TOKEN"))
