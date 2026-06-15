@@ -171,10 +171,6 @@ async def painel(ctx):
     container = discord.ui.Container()
 
     container.add_item(discord.ui.TextDisplay("""
-⚒️ Denúncia  
-❓ Dúvidas  
-⭐ Parceria  
-
 # MOON SOCIETY  
 Seja bem-vindo(a) a central de tickets da moon society 🌙  
 
@@ -185,8 +181,8 @@ perguntas sobre o servidor.
 um dos motivos abaixo:  
 
 > • Fazer denúncias  
-• Tirar dúvidas  
-• Fazer parceria  
+> • Tirar dúvidas  
+> • Fazer parceria  
 
 Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição. 💫
 """))
