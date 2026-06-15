@@ -13,12 +13,6 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 async def on_ready():
     print(f"Logado como {bot.user}")
 
-    print("LayoutView:", hasattr(discord.ui, "LayoutView"))
-    print("Container:", hasattr(discord.ui, "Container"))
-    print("TextDisplay:", hasattr(discord.ui, "TextDisplay"))
-    print("Section:", hasattr(discord.ui, "Section"))
-    print("MediaGallery:", hasattr(discord.ui, "MediaGallery"))
-
 
 @bot.command()
 async def ping(ctx):
@@ -26,7 +20,7 @@ async def ping(ctx):
 
 
 @bot.command()
-async def v2(ctx):
+async def teste2(ctx):
 
     try:
 
@@ -34,26 +28,36 @@ async def v2(ctx):
 
         container = discord.ui.Container()
 
-        text = discord.ui.TextDisplay(
-            "# MOON SOCIETY\n\nTeste do Components V2 🤠"
+        container.add_item(
+            discord.ui.TextDisplay(
+                "# MOON SOCIETY"
+            )
         )
 
-        container.add_item(text)
+        container.add_item(
+            discord.ui.TextDisplay(
+                "Seja bem-vindo(a) à central de tickets."
+            )
+        )
+
+        container.add_item(
+            discord.ui.TextDisplay(
+                "Use este teste para verificar se os Containers V2 estão funcionando corretamente."
+            )
+        )
 
         view.add_item(container)
 
-        await ctx.send(
-            view=view
-        )
+        await ctx.send(view=view)
 
     except Exception as e:
 
         erro = f"{type(e).__name__}: {e}"
 
-        print("ERRO V2:", erro)
+        print("ERRO TESTE2:", erro)
 
         await ctx.send(
-            f"❌ ERRO V2:\n```{erro}```"
+            f"❌ ERRO:\n```{erro}```"
         )
 
 
