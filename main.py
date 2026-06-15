@@ -144,14 +144,14 @@ Tenha paciência e tenha em mente que para fechar parceria, tenha:
 
         await interaction.response.send_message(
             f"""
-# 🎫 Ticket Criado
+# 🎫 | Ticket Criado 🌙
 
 ✅ Seu ticket de **{escolha}** foi criado com sucesso.
 
 ➡️ Acesse seu ticket:
 {thread.mention}
 
-💫 Aguarde um membro da equipe responder.
+💫 E aguarde um membro da equipe staff responder.
 """,
             ephemeral=True
         )
@@ -168,7 +168,7 @@ async def painel(ctx):
     container = discord.ui.Container()
 
     container.add_item(discord.ui.TextDisplay("""
-# MOON SOCIETY  
+# MOON SOCIETY  | 🌙
 Seja bem-vindo(a) a central de tickets da moon society 🌙  
 
 > Use pra fazer denúncias e fazer  
