@@ -1,4 +1,5 @@
 import discord
+print("discord.py:", discord.__version__)
 from discord.ext import commands
 import os
 
