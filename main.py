@@ -8,12 +8,12 @@ intents.message_content = True
 bot = commands.Bot(command_prefix=".", intents=intents)
 
 # =========================
-# CONTROLE DE TICKETS (ANTI DUPLO)
+# ANTI MULTI TICKET
 # =========================
 active_tickets = {}
 
 # =========================
-# BOTÕES DO TICKET (V2 STYLE)
+# BOTÕES DO TICKET
 # =========================
 
 class TicketButtons(discord.ui.View):
@@ -30,9 +30,7 @@ class TicketButtons(discord.ui.View):
     async def fechar(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         user_id = interaction.user.id
-
-        if user_id in active_tickets:
-            active_tickets.pop(user_id, None)
+        active_tickets.pop(user_id, None)
 
         await interaction.channel.send(f"🔒 Ticket fechado por {interaction.user.mention}")
         await interaction.channel.edit(archived=True, locked=True)
@@ -43,6 +41,7 @@ class TicketButtons(discord.ui.View):
     async def reabrir(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         await interaction.channel.edit(archived=False, locked=False)
+
         await interaction.channel.send(f"🔓 Ticket reaberto por {interaction.user.mention}")
 
         await interaction.response.send_message("Ticket reaberto.", ephemeral=True)
@@ -62,7 +61,7 @@ class TicketSelect(discord.ui.Select):
         ]
 
         super().__init__(
-            placeholder="➡️ Escolha uma opção",
+            placeholder="Escolha uma opção",
             min_values=1,
             max_values=1,
             options=options
@@ -72,7 +71,7 @@ class TicketSelect(discord.ui.Select):
 
         user_id = interaction.user.id
 
-        # ❌ ANTI MULTI TICKET
+        # ❌ ANTI DUPLO TICKET
         if user_id in active_tickets:
             return await interaction.response.send_message(
                 "❌ Você já tem um ticket aberto.",
@@ -96,7 +95,7 @@ class TicketSelect(discord.ui.Select):
         await thread.add_user(interaction.user)
 
         # =========================
-        # MENSAGENS POR TIPO
+        # TEXTO DENTRO DA THREAD (TEUS TEXTOS)
         # =========================
 
         if escolha == "Denúncia":
@@ -104,10 +103,14 @@ class TicketSelect(discord.ui.Select):
             await thread.send("""
 ⚒️ Denúncia
 
-🤠 Staff irá te atender.
+🤠 | Alguém da equipe staff logo virá atender.
 
-• Prints
-• Nome/ID do acusado
+Por favor, tenha cordialidade e respeito pelos nossos staffs.
+
+Tenha os seguintes itens em mãos:
+
+• Prints do ocorrido  
+• Nome do infrator (ou o Id)
 """)
 
         elif escolha == "Dúvidas":
@@ -115,7 +118,11 @@ class TicketSelect(discord.ui.Select):
             await thread.send("""
 ❓ Dúvidas
 
-😃 Staff irá responder sua dúvida.
+😃 | Alguém da equipe staff virá atender.
+
+Tenha cordialidade e respeito.
+
+Apresente-nos a sua dúvida que algum staff irá responder.
 """)
 
         elif escolha == "Parceria":
@@ -123,34 +130,38 @@ class TicketSelect(discord.ui.Select):
             await thread.send("""
 ⭐ Parceria
 
-😄 Dono irá analisar.
+😄 | O dono do servidor logo virá.
 
-• 700+ membros
-• Ativo
-• Sem NSFW
+Tenha paciência e tenha em mente que para fechar parceria, tenha:
+
+• Um servidor com no mínimo 700 pessoas  
+• Um público ativo  
+• Que não tenha envolvimento algum com NSFW/conteúdo pornográfico ou +18.
 """)
 
-        # BOTÕES STYLE BLOX WORLD
         await thread.send(view=TicketButtons())
 
-        # RESPOSTA BONITA
+        # =========================
+        # TEXTO DE CONFIRMAÇÃO (TEU FORMATO EXATO)
+        # =========================
+
         await interaction.response.send_message(
             f"""
-# 🌙 MOON SOCIETY
+# 🎫 Ticket Criado
 
 ✅ Seu ticket de **{escolha}** foi criado com sucesso.
 
-🎫 Ticket:
+➡️ Acesse seu ticket:
 {thread.mention}
 
-💫 Em breve alguém da equipe irá atendê-lo.
+💫 Aguarde um membro da equipe responder.
 """,
             ephemeral=True
         )
 
 
 # =========================
-# PAINEL (BLOX WORLD STYLE)
+# PAINEL (TEU TEXTO EXATO)
 # =========================
 
 @bot.command()
@@ -159,23 +170,26 @@ async def painel(ctx):
     view = discord.ui.LayoutView()
     container = discord.ui.Container()
 
-    container.add_item(
-        discord.ui.TextDisplay("# 🌙 MOON SOCIETY")
-    )
-
-    container.add_item(
-        discord.ui.TextDisplay("""
-Seja bem-vindo(a) a central de tickets 🌙
-
-> Escolha uma opção abaixo:
-
+    container.add_item(discord.ui.TextDisplay("""
 ⚒️ Denúncia  
 ❓ Dúvidas  
 ⭐ Parceria  
 
-Não crie tickets sem motivo válido.
-""")
-    )
+# MOON SOCIETY  
+Seja bem-vindo(a) a central de tickets da moon society 🌙  
+
+> Use pra fazer denúncias e fazer  
+perguntas sobre o servidor.  
+
+> Por favor, não crie tickets caso não for  
+um dos motivos abaixo:  
+
+> • Fazer denúncias  
+• Tirar dúvidas  
+• Fazer parceria  
+
+Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição. 💫
+"""))
 
     container.add_item(discord.ui.Separator())
 
@@ -197,9 +211,5 @@ Não crie tickets sem motivo válido.
 async def on_ready():
     print(f"Logado como {bot.user}")
 
-
-# =========================
-# START
-# =========================
 
 bot.run(os.getenv("DISCORD_TOKEN"))
