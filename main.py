@@ -72,9 +72,7 @@ class TicketSelect(discord.ui.Select):
 
             if escolha == "Denúncia":
 
-                nome_thread = (
-                    f"Denúncia ✦ {nome_usuario} ✦ {id_usuario}"
-                )
+                nome_thread = f"Denúncia ✦ {nome_usuario} ✦ {id_usuario}"
 
                 thread = await canal.create_thread(
                     name=nome_thread
@@ -82,9 +80,7 @@ class TicketSelect(discord.ui.Select):
 
                 await thread.add_user(interaction.user)
 
-                await thread.send(
-                    f"<@&{STAFF_ROLE_ID}>"
-                )
+                await thread.send(f"<@&{STAFF_ROLE_ID}>")
 
                 await thread.send(
                     """
@@ -101,9 +97,7 @@ Tenha os seguintes itens em mãos:
 
             elif escolha == "Dúvidas":
 
-                nome_thread = (
-                    f"Dúvidas ✦ {nome_usuario} ✦ {id_usuario}"
-                )
+                nome_thread = f"Dúvidas ✦ {nome_usuario} ✦ {id_usuario}"
 
                 thread = await canal.create_thread(
                     name=nome_thread
@@ -111,9 +105,7 @@ Tenha os seguintes itens em mãos:
 
                 await thread.add_user(interaction.user)
 
-                await thread.send(
-                    f"<@&{STAFF_ROLE_ID}>"
-                )
+                await thread.send(f"<@&{STAFF_ROLE_ID}>")
 
                 await thread.send(
                     """
@@ -127,9 +119,7 @@ Apresente-nos a sua dúvida que algum staff irá responder.
 
             elif escolha == "Parceria":
 
-                nome_thread = (
-                    f"Parceria ✦ {nome_usuario} ✦ {id_usuario}"
-                )
+                nome_thread = f"Parceria ✦ {nome_usuario} ✦ {id_usuario}"
 
                 thread = await canal.create_thread(
                     name=nome_thread
@@ -137,9 +127,7 @@ Apresente-nos a sua dúvida que algum staff irá responder.
 
                 await thread.add_user(interaction.user)
 
-                await thread.send(
-                    f"<@{OWNER_ID}>"
-                )
+                await thread.send(f"<@{OWNER_ID}>")
 
                 await thread.send(
                     """
@@ -154,7 +142,18 @@ Tenha paciência e tenha em mente que para fechar parceria, tenha:
                 )
 
             await interaction.response.send_message(
-                f"✅ Ticket de {escolha} criado com sucesso.",
+                f"""
+# 🌙 MOON SOCIETY
+
+✅ Seu ticket de **{escolha}** foi criado com sucesso.
+
+🎫 Ticket:
+{thread.mention}
+
+💫 Em breve alguém da equipe irá atendê-lo.
+
+Obrigado pela paciência.
+""",
                 ephemeral=True
             )
 
@@ -165,6 +164,7 @@ Tenha paciência e tenha em mente que para fechar parceria, tenha:
                 ephemeral=True
             )
 
+
 # =========================
 # PAINEL
 # =========================
@@ -172,21 +172,17 @@ Tenha paciência e tenha em mente que para fechar parceria, tenha:
 @bot.command()
 async def painel(ctx):
 
-    try:
+    view = discord.ui.LayoutView()
 
-        view = discord.ui.LayoutView()
+    container = discord.ui.Container()
 
-        container = discord.ui.Container()
+    container.add_item(
+        discord.ui.TextDisplay("# MOON SOCIETY")
+    )
 
-        container.add_item(
-            discord.ui.TextDisplay(
-                "# MOON SOCIETY"
-            )
-        )
-
-        container.add_item(
-            discord.ui.TextDisplay(
-                """
+    container.add_item(
+        discord.ui.TextDisplay(
+            """
 Seja bem-vindo(a) a central de tickets da moon society 🌙
 
 > Use pra fazer denúncias e fazer
@@ -200,35 +196,21 @@ Seja bem-vindo(a) a central de tickets da moon society 🌙
 > • Fazer parceria
 
 Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição. 💫
-                """
-            )
+"""
         )
+    )
 
-        container.add_item(
-            discord.ui.Separator()
-        )
+    container.add_item(discord.ui.Separator())
 
-        row = discord.ui.ActionRow()
+    row = discord.ui.ActionRow()
+    row.add_item(TicketSelect())
 
-        row.add_item(
-            TicketSelect()
-        )
+    container.add_item(row)
 
-        container.add_item(row)
+    view.add_item(container)
 
-        view.add_item(container)
+    await ctx.send(view=view)
 
-        await ctx.send(view=view)
-
-    except Exception as e:
-
-        erro = f"{type(e).__name__}: {e}"
-
-        print(erro)
-
-        await ctx.send(
-            f"❌ Erro:\n```{erro}```"
-        )
 
 # =========================
 # TESTE
@@ -238,6 +220,7 @@ Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujei
 async def ping(ctx):
     await ctx.send("pong 🤠")
 
+
 # =========================
 # READY
 # =========================
@@ -245,6 +228,7 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print(f"Logado como {bot.user}")
+
 
 # =========================
 # START
