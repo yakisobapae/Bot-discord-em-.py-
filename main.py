@@ -101,7 +101,6 @@ class TicketSelect(discord.ui.Select):
         if escolha == "Denúncia":
             await thread.send(f"<@&{STAFF_ROLE_ID}>")
             await thread.send("""
-⚒️ Denúncia
 
 🤠 | Alguém da equipe staff logo virá atender.
 
@@ -110,25 +109,23 @@ Por favor, tenha cordialidade e respeito pelos nossos staffs.
 Tenha os seguintes itens em mãos:
 
 • Prints do ocorrido  
-• Nome do infrator (ou o Id)
+• Nome do infrator (ou o Id) 🌙
 """)
 
         elif escolha == "Dúvidas":
             await thread.send(f"<@&{STAFF_ROLE_ID}>")
             await thread.send("""
-❓ Dúvidas
 
 😃 | Alguém da equipe staff virá atender.
 
 Tenha cordialidade e respeito.
 
-Apresente-nos a sua dúvida que algum staff irá responder.
+Apresente-nos a sua dúvida que algum staff irá responder. 🌙
 """)
 
         elif escolha == "Parceria":
             await thread.send(f"<@{OWNER_ID}>")
             await thread.send("""
-⭐ Parceria
 
 😄 | O dono do servidor logo virá.
 
@@ -136,7 +133,7 @@ Tenha paciência e tenha em mente que para fechar parceria, tenha:
 
 • Um servidor com no mínimo 700 pessoas  
 • Um público ativo  
-• Que não tenha envolvimento algum com NSFW/conteúdo pornográfico ou +18.
+• Que não tenha envolvimento algum com NSFW/conteúdo pornográfico ou +18. 🌙
 """)
 
         await thread.send(view=TicketButtons())
