@@ -2,20 +2,29 @@ import discord
 from discord.ext import commands
 import os
 
-print("discord.py:", discord.__version__)
-
 intents = discord.Intents.default()
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+@bot.command()
+async def teste(ctx):
+
+    view = discord.ui.LayoutView()
+
+    container = discord.ui.Container()
+
+    container.add_item(
+        discord.ui.TextDisplay(
+            "# MOON SOCIETY\n\nTeste do Components V2 🤠"
+        )
+    )
+
+    view.add_item(container)
+
+    await ctx.send(view=view)
+
 @bot.event
 async def on_ready():
     print(f"Logado como {bot.user}")
-
-    print("LayoutView:", hasattr(discord.ui, "LayoutView"))
-    print("Container:", hasattr(discord.ui, "Container"))
-    print("TextDisplay:", hasattr(discord.ui, "TextDisplay"))
-    print("Section:", hasattr(discord.ui, "Section"))
-    print("MediaGallery:", hasattr(discord.ui, "MediaGallery"))
 
 bot.run(os.getenv("DISCORD_TOKEN"))
