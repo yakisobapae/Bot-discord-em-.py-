@@ -48,13 +48,122 @@ class TicketSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
 
-        escolha = self.values[0]
+        STAFF_ROLE_ID = 1498522857356132465
+        OWNER_ID = 1496941098009100519
+        TICKET_CHANNEL_ID = 1498477718499492069
 
-        await interaction.response.send_message(
-            f"Você selecionou **{escolha}**.",
-            ephemeral=True
+        canal = interaction.guild.get_channel(
+            TICKET_CHANNEL_ID
         )
 
+        if canal is None:
+            await interaction.response.send_message(
+                "❌ Canal de tickets não encontrado.",
+                ephemeral=True
+            )
+            return
+
+        escolha = self.values[0]
+
+        nome_usuario = interaction.user.name
+        id_usuario = interaction.user.id
+
+        try:
+
+            if escolha == "Denúncia":
+
+                nome_thread = (
+                    f"Denúncia ✦ {nome_usuario} ✦ {id_usuario}"
+                )
+
+                thread = await canal.create_thread(
+                    name=nome_thread
+                )
+
+                await thread.add_user(interaction.user)
+
+                await thread.send(
+                    f"<@&{STAFF_ROLE_ID}>"
+                )
+
+                await thread.send(
+                    """
+🤠 | Alguém da equipe staff logo virá atender.
+
+Por favor, tenha cordialidade e respeito pelos nossos staffs.
+
+Tenha os seguintes itens em mãos:
+
+• Prints do ocorrido
+• Nome do infrator (ou o Id)
+                    """
+                )
+
+            elif escolha == "Dúvidas":
+
+                nome_thread = (
+                    f"Dúvidas ✦ {nome_usuario} ✦ {id_usuario}"
+                )
+
+                thread = await canal.create_thread(
+                    name=nome_thread
+                )
+
+                await thread.add_user(interaction.user)
+
+                await thread.send(
+                    f"<@&{STAFF_ROLE_ID}>"
+                )
+
+                await thread.send(
+                    """
+😃 | Alguém da equipe staff virá atender.
+
+Tenha cordialidade e respeito.
+
+Apresente-nos a sua dúvida que algum staff irá responder.
+                    """
+                )
+
+            elif escolha == "Parceria":
+
+                nome_thread = (
+                    f"Parceria ✦ {nome_usuario} ✦ {id_usuario}"
+                )
+
+                thread = await canal.create_thread(
+                    name=nome_thread
+                )
+
+                await thread.add_user(interaction.user)
+
+                await thread.send(
+                    f"<@{OWNER_ID}>"
+                )
+
+                await thread.send(
+                    """
+😄 | O dono do servidor logo virá.
+
+Tenha paciência e tenha em mente que para fechar parceria, tenha:
+
+• Um servidor com no mínimo 700 pessoas
+• Um público ativo
+• Que não tenha envolvimento algum com NSFW/conteúdo pornográfico ou +18.
+                    """
+                )
+
+            await interaction.response.send_message(
+                f"✅ Ticket de {escolha} criado com sucesso.",
+                ephemeral=True
+            )
+
+        except Exception as e:
+
+            await interaction.response.send_message(
+                f"❌ Erro: {type(e).__name__}: {e}",
+                ephemeral=True
+            )
 
 # =========================
 # PAINEL
@@ -82,10 +191,10 @@ Seja bem-vindo(a) a central de tickets da moon society 🌙
 
 > Use pra fazer denúncias e fazer
 > perguntas sobre o servidor.
->
+
 > Por favor, não crie tickets caso não for
 > um dos motivos abaixo:
->
+
 > • Fazer denúncias
 > • Tirar dúvidas
 > • Fazer parceria
@@ -121,7 +230,6 @@ Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujei
             f"❌ Erro:\n```{erro}```"
         )
 
-
 # =========================
 # TESTE
 # =========================
@@ -130,7 +238,6 @@ Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujei
 async def ping(ctx):
     await ctx.send("pong 🤠")
 
-
 # =========================
 # READY
 # =========================
@@ -138,7 +245,6 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print(f"Logado como {bot.user}")
-
 
 # =========================
 # START
