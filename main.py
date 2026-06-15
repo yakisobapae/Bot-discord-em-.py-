@@ -3,28 +3,17 @@ from discord.ext import commands
 import os
 
 intents = discord.Intents.default()
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.command()
-async def teste(ctx):
-
-    view = discord.ui.LayoutView()
-
-    container = discord.ui.Container()
-
-    container.add_item(
-        discord.ui.TextDisplay(
-            "# MOON SOCIETY\n\nTeste do Components V2 🤠"
-        )
-    )
-
-    view.add_item(container)
-
-    await ctx.send(view=view)
+async def ping(ctx):
+    await ctx.send("pong 🤠")
 
 @bot.event
 async def on_ready():
     print(f"Logado como {bot.user}")
+    print("discord.py:", discord.__version__)
 
 bot.run(os.getenv("DISCORD_TOKEN"))
