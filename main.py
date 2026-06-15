@@ -5,12 +5,15 @@ import os
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(
+    command_prefix=".",
+    intents=intents
+)
 
 class TicketSelect(discord.ui.Select):
     def __init__(self):
         super().__init__(
-            placeholder="📋 Escolha uma opção...",
+            placeholder="➡️ Clique aqui para ver as opções",
             min_values=1,
             max_values=1,
             options=[
@@ -33,57 +36,76 @@ class TicketSelect(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
+
         await interaction.response.send_message(
             f"Você escolheu: **{self.values[0]}**",
             ephemeral=True
         )
 
+
+@bot.event
+async def on_ready():
+    print(f"Logado como {bot.user}")
+
+
 @bot.command()
-async def painel(ctx):
+async def moon(ctx):
 
-    view = discord.ui.LayoutView()
+    try:
 
-    container = discord.ui.Container()
+        view = discord.ui.LayoutView()
 
-    container.add_item(
-        discord.ui.TextDisplay(
-            "# MOON SOCIETY"
+        container = discord.ui.Container()
+
+        container.add_item(
+            discord.ui.TextDisplay(
+                "# MOON SOCIETY"
+            )
         )
-    )
 
-    container.add_item(
-        discord.ui.TextDisplay(
-            """
+        container.add_item(
+            discord.ui.TextDisplay(
+                """
 Seja bem-vindo(a) a central de tickets.
 
 Use pra fazer denúncias e fazer perguntas sobre o servidor.
 
 Por favor, não crie tickets caso não for um dos motivos abaixo:
 
-- Fazer denúncias
-- Tirar dúvidas
-- Fazer parceria
+• Fazer denúncias
+• Tirar dúvidas
+• Fazer parceria
 
-Caso não for nenhum desses motivos, NÃO abra o ticket.
-"""
+Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição.
+                """
+            )
         )
-    )
 
-    view.add_item(container)
+        container.add_item(
+            discord.ui.Separator()
+        )
 
-    select_view = discord.ui.View(timeout=None)
-    select_view.add_item(TicketSelect())
+        row = discord.ui.ActionRow()
 
-    await ctx.send(
-        view=view
-    )
+        row.add_item(
+            TicketSelect()
+        )
 
-    await ctx.send(
-        view=select_view
-    )
+        container.add_item(row)
 
-@bot.event
-async def on_ready():
-    print(f"Logado como {bot.user}")
+        view.add_item(container)
+
+        await ctx.send(view=view)
+
+    except Exception as e:
+
+        erro = f"{type(e).__name__}: {e}"
+
+        print("ERRO:", erro)
+
+        await ctx.send(
+            f"❌ ERRO:\n```{erro}```"
+        )
+
 
 bot.run(os.getenv("DISCORD_TOKEN"))
