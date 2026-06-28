@@ -1,5 +1,4 @@
 import discord
-
 from discord.ext import commands
 import os
 
@@ -9,44 +8,12 @@ intents.message_content = True
 bot = commands.Bot(command_prefix=".", intents=intents)
 
 # =========================
-# ANTI MULTI TICKET
-# =========================
-active_tickets = {}
-
-# =========================
-# BOTÕES DO TICKET
+# CONFIG
 # =========================
 
-class TicketButtons(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="🕐 Assumir", style=discord.ButtonStyle.primary)
-    async def assumir(self, interaction: discord.Interaction, button: discord.ui.Button):
-
-        await interaction.channel.send(f"👮 {interaction.user.mention} assumiu o ticket.")
-        await interaction.response.send_message("Ticket assumido.", ephemeral=True)
-
-    @discord.ui.button(label="🗑 Fechar", style=discord.ButtonStyle.danger)
-    async def fechar(self, interaction: discord.Interaction, button: discord.ui.Button):
-
-        user_id = interaction.user.id
-        active_tickets.pop(user_id, None)
-
-        await interaction.channel.send(f"🔒 Ticket fechado por {interaction.user.mention}")
-        await interaction.channel.edit(archived=True, locked=True)
-
-        await interaction.response.send_message("Ticket fechado.", ephemeral=True)
-
-    @discord.ui.button(label="🔓 Reabrir", style=discord.ButtonStyle.success)
-    async def reabrir(self, interaction: discord.Interaction, button: discord.ui.Button):
-
-        await interaction.channel.edit(archived=False, locked=False)
-
-        await interaction.channel.send(f"🔓 Ticket reaberto por {interaction.user.mention}")
-
-        await interaction.response.send_message("Ticket reaberto.", ephemeral=True)
-
+STAFF_ROLE_ID = 1498522857356132465
+OWNER_ID = 1496941098009100519
+TICKET_CHANNEL_ID = 1498477718499492069
 
 # =========================
 # SELECT MENU
@@ -56,13 +23,31 @@ class TicketSelect(discord.ui.Select):
     def __init__(self):
 
         options = [
-            discord.SelectOption(label="Denúncia", emoji="⚒️"),
-            discord.SelectOption(label="Dúvidas", emoji="❓"),
-            discord.SelectOption(label="Parceria", emoji="⭐")
+
+            discord.SelectOption(
+                label="Denúncia",
+                emoji="<a:warn:1520533946914308426>"
+            ),
+
+            discord.SelectOption(
+                label="Suporte",
+                emoji="<:logodc:1520533477613895802>"
+            ),
+
+            discord.SelectOption(
+                label="Parceria",
+                emoji="<:istrelinhaxxa1:1520533561805901844>"
+            ),
+
+            discord.SelectOption(
+                label="Tornar Staff",
+                emoji="<:istefi:1520533621398700043>"
+            )
+
         ]
 
         super().__init__(
-            placeholder="Escolha uma opção",
+            placeholder="Escolha uma opção de ticket",
             min_values=1,
             max_values=1,
             options=options
@@ -70,140 +55,162 @@ class TicketSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
 
-        user_id = interaction.user.id
+        canal = interaction.guild.get_channel(TICKET_CHANNEL_ID)
 
-        # ❌ ANTI DUPLO TICKET
-        if user_id in active_tickets:
+        if not canal:
             return await interaction.response.send_message(
-                "❌ Você já tem um ticket aberto.",
+                "Canal de tickets não encontrado.",
                 ephemeral=True
             )
 
-        STAFF_ROLE_ID = 1498522857356132465
-        OWNER_ID = 1496941098009100519
-        TICKET_CHANNEL_ID = 1498477718499492069
-
-        canal = interaction.guild.get_channel(TICKET_CHANNEL_ID)
-
         escolha = self.values[0]
 
-        nome_thread = f"{escolha} ✦ {interaction.user.name} ✦ {interaction.user.id}"
+        user = interaction.user
 
-        thread = await canal.create_thread(name=nome_thread)
+        nome_thread = f"{escolha} ✦ {user.name} ✦ {user.id}"
 
-        active_tickets[user_id] = thread.id
+        try:
 
-        await thread.add_user(interaction.user)
+            thread = await canal.create_thread(
+                name=nome_thread
+            )
 
-        # =========================
-        # TEXTO DENTRO DA THREAD (TEUS TEXTOS)
-        # =========================
+            await thread.add_user(user)
 
-        if escolha == "Denúncia":
-            await thread.send(f"<@&{STAFF_ROLE_ID}>")
-            await thread.send("""
+            # =========================
+            # DENUNCIA
+            # =========================
+            if escolha == "Denúncia":
 
-🤠 | Alguém da equipe staff logo virá atender.
+                await thread.send(f"<@&{STAFF_ROLE_ID}>")
 
-Por favor, tenha cordialidade e respeito pelos nossos staffs.
+                await thread.send("""
+<a:warn:1520533946914308426> | Denúncia
 
-Tenha os seguintes itens em mãos:
+Alguém da equipe staff irá te atender.
 
-• Prints do ocorrido  
-• Nome do infrator (ou o Id) 🌙
+Por favor mantenha respeito.
+
+Tenha em mãos:
+• Prints
+• ID ou nome do infrator
 """)
 
-        elif escolha == "Dúvidas":
-            await thread.send(f"<@&{STAFF_ROLE_ID}>")
-            await thread.send("""
+            # =========================
+            # SUPORTE
+            # =========================
+            elif escolha == "Suporte":
 
-😃 | Alguém da equipe staff virá atender.
+                await thread.send(f"<@&{STAFF_ROLE_ID}>")
 
-Tenha cordialidade e respeito.
+                await thread.send("""
+<:logodc:1520533477613895802> | Suporte
 
-Apresente-nos a sua dúvida que algum staff irá responder. 🌙
+Um staff irá te atender em breve.
+
+Explique sua dúvida com clareza.
 """)
 
-        elif escolha == "Parceria":
-            await thread.send(f"<@{OWNER_ID}>")
-            await thread.send("""
+            # =========================
+            # PARCERIA
+            # =========================
+            elif escolha == "Parceria":
 
-😄 | O dono do servidor logo virá.
+                await thread.send(f"<@{OWNER_ID}>")
 
-Tenha paciência e tenha em mente que para fechar parceria, tenha:
+                await thread.send("""
+<:istrelinhaxxa1:1520533561805901844> | Parceria
 
-• Um servidor com no mínimo 700 pessoas  
-• Um público ativo  
-• Que não tenha envolvimento algum com NSFW/conteúdo pornográfico ou +18. 🌙
+O dono do servidor irá te responder.
+
+Requisitos:
+• +700 membros
+• Público ativo
+• Sem conteúdo +18
 """)
 
-        await thread.send(view=TicketButtons())
+            # =========================
+            # TORNAR STAFF
+            # =========================
+            elif escolha == "Tornar Staff":
 
-        # =========================
-        # TEXTO DE CONFIRMAÇÃO (TEU FORMATO EXATO)
-        # =========================
+                await thread.send(f"<@{OWNER_ID}>")
 
-        await interaction.response.send_message(
-            f"""
-# 🎫 | Ticket Criado 🌙
+                await thread.send("""
+<:istefi:1520533621398700043> | Tornar Staff
 
-✅ Seu ticket de **{escolha}** foi criado com sucesso.
+Explique por que você quer fazer parte da equipe.
 
-➡️ Acesse seu ticket:
-{thread.mention}
+O dono irá avaliar sua solicitação.
+""")
 
-💫 E aguarde um membro da equipe staff responder.
-""",
-            ephemeral=True
-        )
+            await interaction.response.send_message(
+                f"Ticket criado com sucesso!\n{thread.mention}",
+                ephemeral=True
+            )
 
+        except Exception as e:
+
+            await interaction.response.send_message(
+                f"Erro: {type(e).__name__}: {e}",
+                ephemeral=True
+            )
 
 # =========================
-# PAINEL (TEU TEXTO EXATO)
+# PERSISTENT VIEW
+# =========================
+
+class TicketView(discord.ui.LayoutView):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+        container = discord.ui.Container()
+
+        container.add_item(
+            discord.ui.TextDisplay("# MOON SOCIETY")
+        )
+
+        container.add_item(
+            discord.ui.TextDisplay("""
+Seja bem-vindo(a) à central de tickets da Moon Society 🌙
+
+• Denúncia
+• Suporte
+• Parceria
+• Tornar Staff
+
+Escolha abaixo o tipo de atendimento.
+""")
+        )
+
+        container.add_item(discord.ui.Separator())
+
+        row = discord.ui.ActionRow()
+        row.add_item(TicketSelect())
+
+        container.add_item(row)
+
+        self.add_item(container)
+
+# =========================
+# PAINEL
 # =========================
 
 @bot.command()
 async def painel(ctx):
-
-    view = discord.ui.LayoutView()
-    container = discord.ui.Container()
-
-    container.add_item(discord.ui.TextDisplay("""
-# MOON SOCIETY  | 🌙
-Seja bem-vindo(a) a central de tickets da moon society 🌙  
-
-> Use pra fazer denúncias e fazer  
-perguntas sobre o servidor.  
-
-> Por favor, não crie tickets caso não for  
-um dos motivos abaixo:  
-
-> • Fazer denúncias  
-> • Tirar dúvidas  
-> • Fazer parceria  
-
-Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição. 💫
-"""))
-
-    container.add_item(discord.ui.Separator())
-
-    row = discord.ui.ActionRow()
-    row.add_item(TicketSelect())
-
-    container.add_item(row)
-
-    view.add_item(container)
-
-    await ctx.send(view=view)
-
+    await ctx.send(view=TicketView())
 
 # =========================
-# READY
+# ON READY
 # =========================
 
 @bot.event
 async def on_ready():
+    bot.add_view(TicketView())
     print(f"Logado como {bot.user}")
 
+# =========================
+# START
+# =========================
 
 bot.run(os.getenv("DISCORD_TOKEN"))
