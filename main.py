@@ -14,33 +14,28 @@ bot = commands.Bot(command_prefix=".", intents=intents)
 STAFF_ROLE_ID = 1498522857356132465
 OWNER_ID = 1496941098009100519
 TICKET_CHANNEL_ID = 1498477718499492069
-LOG_CHANNEL_ID = None  # coloca ID do canal de logs depois se quiser
 
-# =========================
-# EMBED PADRÃO
-# =========================
-
-def ticket_embed(title, description, color=0x2B2D31):
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=color
-    )
-    return embed
-
-def dm_embed(title, description):
-    embed = discord.Embed(
-        title=title,
-        description=description,
-        color=0x000000  # preto
-    )
-    return embed
-
-# =========================
-# STORAGE SIMPLES (ANTI DUPLICATE)
-# =========================
+FORM_STAFF = "https://forms.gle/ymnid4qmAy3bufew7"
 
 open_tickets = {}
+
+# =========================
+# EMBEDS
+# =========================
+
+def ticket_embed(title, description):
+    return discord.Embed(
+        title=title,
+        description=description,
+        color=0x2B2D31
+    )
+
+def dm_embed(title, description):
+    return discord.Embed(
+        title=title,
+        description=description,
+        color=0x000000
+    )
 
 # =========================
 # SELECT MENU
@@ -67,10 +62,8 @@ class TicketSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
 
-        guild = interaction.guild
+        canal = interaction.guild.get_channel(TICKET_CHANNEL_ID)
         user = interaction.user
-
-        canal = guild.get_channel(TICKET_CHANNEL_ID)
 
         if user.id in open_tickets:
             return await interaction.response.send_message(
@@ -80,56 +73,77 @@ class TicketSelect(discord.ui.Select):
 
         escolha = self.values[0]
 
-        nome = f"{escolha} ✦ {user.name} ✦ {user.id}"
+        nome_thread = f"{escolha} ✦ {user.name} ✦ {user.id}"
 
-        thread = await canal.create_thread(name=nome)
+        thread = await canal.create_thread(name=nome_thread)
         await thread.add_user(user)
 
         open_tickets[user.id] = thread.id
 
         # =========================
-        # MENSAGENS POR TIPO
+        # MENSAGEM EFÊMERA (OBRIGATÓRIO)
         # =========================
 
-        if escolha == "Denúncia":
-
-            await thread.send(f"<@&{STAFF_ROLE_ID}>")
-            await thread.send(embed=ticket_embed(
-                "⚒️ Denúncia",
-                "Envie provas e explique o ocorrido."
-            ))
-
-        elif escolha == "Suporte":
-
-            await thread.send(f"<@&{STAFF_ROLE_ID}>")
-            await thread.send(embed=ticket_embed(
-                "❓ Suporte",
-                "Explique sua dúvida."
-            ))
-
-        elif escolha == "Parceria":
-
-            await thread.send(f"<@{OWNER_ID}>")
-            await thread.send(embed=ticket_embed(
-                "⭐ Parceria",
-                "Pedido de parceria em análise."
-            ))
-
-        elif escolha == "Tornar Staff":
-
-            await thread.send(f"<@{OWNER_ID}>")
-            await thread.send(embed=ticket_embed(
-                "👮 Staff",
-                "Explique por que quer entrar na equipe."
-            ))
-
         await interaction.response.send_message(
-            f"✅ Ticket criado!\n{thread.mention}",
+            f"🎟️ Ticket aberto com sucesso!! 🌙\nEste é seu ticket ➡️ {thread.mention}",
             ephemeral=True
         )
 
+        # =========================
+        # DENÚNCIA
+        # =========================
+        if escolha == "Denúncia":
+
+            await thread.send(f"<@&{STAFF_ROLE_ID}>")
+
+            await thread.send(embed=ticket_embed(
+                "⚒️ Denúncia",
+                "Envie provas do ocorrido e aguarde a staff."
+            ))
+
+        # =========================
+        # SUPORTE (ATUALIZADO)
+        # =========================
+        elif escolha == "Suporte":
+
+            await thread.send(f"<@&{STAFF_ROLE_ID}>")
+
+            await thread.send(embed=ticket_embed(
+                "<:logodc:1520533477613895802> Suporte",
+                """Seja bem vindo ao ticket de suporte!!
+
+Aqui você terá acesso a:
+• Tirar dúvidas
+• Reportar bugs
+• Ser guiado
+
+Tenha calma e aguarde a staff te atender!"""
+            ))
+
+        # =========================
+        # PARCERIA
+        # =========================
+        elif escolha == "Parceria":
+
+            await thread.send(f"<@{OWNER_ID}>")
+
+            await thread.send(embed=ticket_embed(
+                "⭐ Parceria",
+                "Aguarde o dono avaliar sua parceria."
+            ))
+
+        # =========================
+        # TORNAR STAFF (REDIRECIONA)
+        # =========================
+        elif escolha == "Tornar Staff":
+
+            await thread.send(embed=ticket_embed(
+                "👮 Tornar Staff",
+                f"Para solicitar staff, preencha o formulário:\n{FORM_STAFF}"
+            ))
+
 # =========================
-# VIEW
+# VIEW (CONTAINER V2)
 # =========================
 
 class TicketView(discord.ui.LayoutView):
@@ -138,11 +152,25 @@ class TicketView(discord.ui.LayoutView):
 
         container = discord.ui.Container()
 
-        container.add_item(discord.ui.TextDisplay("# MOON SOCIETY"))
+        container.add_item(
+            discord.ui.TextDisplay(
+"""# MOON SOCIETY  | 🌙
+Seja bem-vindo(a) a central de tickets da moon society 🌙  
 
-        container.add_item(discord.ui.TextDisplay(
-            "Escolha uma opção abaixo para abrir seu ticket 🌙"
-        ))
+> Use pra fazer denúncias e fazer  
+> perguntas sobre o servidor.  
+
+> Por favor, não crie tickets caso não for  
+> um dos motivos abaixo:  
+
+> • Fazer denúncias  
+> • Pedir suporte  
+> • Fazer parceria  
+> • se tornar staff  
+
+Caso não for nenhum desses motivos, NÃO abra o ticket, pois, você será sujeito a uma punição. 💫"""
+            )
+        )
 
         container.add_item(discord.ui.Separator())
 
@@ -154,7 +182,7 @@ class TicketView(discord.ui.LayoutView):
         self.add_item(container)
 
 # =========================
-# BOTÕES DE AÇÃO (ASSUMIR / FECHAR)
+# ASSUMIR / FECHAR
 # =========================
 
 class TicketActions(discord.ui.View):
@@ -164,12 +192,6 @@ class TicketActions(discord.ui.View):
     @discord.ui.button(label="Assumir", style=discord.ButtonStyle.success)
     async def assumir(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        if STAFF_ROLE_ID not in [r.id for r in interaction.user.roles]:
-            return await interaction.response.send_message(
-                "❌ Sem permissão.",
-                ephemeral=True
-            )
-
         embed = ticket_embed(
             "📌 Ticket Assumido",
             f"O ticket foi assumido por {interaction.user.mention}🌙\n> - tenha respeito e cordialidade"
@@ -177,44 +199,12 @@ class TicketActions(discord.ui.View):
 
         await interaction.channel.send(embed=embed)
 
-        # DM pro criador (último usuário no thread)
-        async for msg in interaction.channel.history(limit=50, oldest_first=True):
-            if msg.author != bot.user:
-                user = msg.author
-                break
-
-        try:
-            await user.send(embed=dm_embed(
-                "📌 Ticket Assumido",
-                f"Seu ticket foi assumido por {interaction.user.name}"
-            ))
-        except:
-            pass
-
-        await interaction.response.send_message("✅ Assumido.", ephemeral=True)
+        await interaction.response.send_message("Assumido.", ephemeral=True)
 
     @discord.ui.button(label="Fechar", style=discord.ButtonStyle.danger)
     async def fechar(self, interaction: discord.Interaction, button: discord.ui.Button):
 
         await interaction.channel.send("🔒 Fechando ticket...")
-
-        user = None
-        async for msg in interaction.channel.history(limit=50, oldest_first=True):
-            if msg.author != bot.user:
-                user = msg.author
-                break
-
-        if user:
-            try:
-                await user.send(embed=dm_embed(
-                    "🔒 Ticket Fechado",
-                    "Seu ticket foi fechado pela staff."
-                ))
-            except:
-                pass
-
-        if user and user.id in open_tickets:
-            del open_tickets[user.id]
 
         await interaction.channel.delete()
 
@@ -227,7 +217,7 @@ async def painel(ctx):
     await ctx.send(view=TicketView())
 
 # =========================
-# ON READY
+# READY
 # =========================
 
 @bot.event
